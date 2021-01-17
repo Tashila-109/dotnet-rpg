@@ -77,23 +77,32 @@ namespace dotnet_rpg.Services.CharacterService
 
             try
             {
-                var character = await _context.Characters.FirstOrDefaultAsync(c => c.Id == updatedCharacter.Id);
+                var character = await _context.Characters.Include(c => c.User)
+                    .FirstOrDefaultAsync(c => c.Id == updatedCharacter.Id);
                 if (character == null)
                 {
                     throw new Exception("No such character in the database.");
                 }
 
-                character.Name = updatedCharacter.Name;
-                character.Class = updatedCharacter.Class;
-                character.Defense = updatedCharacter.Defense;
-                character.HitPoints = updatedCharacter.HitPoints;
-                character.Intelligence = updatedCharacter.Intelligence;
-                character.Strength = updatedCharacter.Strength;
+                if (character.User.Id == GetUserId())
+                {
+                    character.Name = updatedCharacter.Name;
+                    character.Class = updatedCharacter.Class;
+                    character.Defense = updatedCharacter.Defense;
+                    character.HitPoints = updatedCharacter.HitPoints;
+                    character.Intelligence = updatedCharacter.Intelligence;
+                    character.Strength = updatedCharacter.Strength;
 
-                _context.Characters.Update(character);
-                await _context.SaveChangesAsync();
+                    _context.Characters.Update(character);
+                    await _context.SaveChangesAsync();
 
-                serviceResponse.Data = _mapper.Map<GetCharacterDto>(character);
+                    serviceResponse.Data = _mapper.Map<GetCharacterDto>(character);
+                }
+                else
+                {
+                    serviceResponse.Success = false;
+                    serviceResponse.Message = "Character not found";
+                }
             }
             catch (Exception ex)
             {
